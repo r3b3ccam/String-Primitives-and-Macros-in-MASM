@@ -23,9 +23,15 @@ INCLUDE Irvine32.inc
 ;
 ; returns: 
 ; ---------------------------------------------------------------
-mGetSring MACRO
+mGetSring MACRO     promptStr, buffer, bufferSize, numChars
+    PUSH    EAX                             ; save registers
+    PUSH    ECX
+    PUSH    EDX
 
 
+    POP     EDX                             ; restore registers
+    POP     ECX
+    POP     EAX
 ENDM
 
 
