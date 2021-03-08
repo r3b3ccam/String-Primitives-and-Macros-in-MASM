@@ -9,7 +9,44 @@ TITLE Project 6 - String Primitives and Macros     (Proj6_mckeever.asm)
 
 INCLUDE Irvine32.inc
 
-; (insert macro definitions here)
+; ---------------------------------------------------------------
+; Name: mGetSring
+;
+; 
+;
+; Preconditions: 
+;
+; Receives:
+; 
+; 
+; 
+;
+; returns: 
+; ---------------------------------------------------------------
+mGetSring MACRO
+
+
+ENDM
+
+
+; ---------------------------------------------------------------
+; Name: mDisplayString
+;
+; 
+;
+; Preconditions: 
+;
+; Receives:
+; 
+; 
+; 
+;
+; returns: 
+; ---------------------------------------------------------------
+mDisplayString MACRO
+
+
+ENDM
 
 ; (insert constant definitions here)
 
