@@ -65,13 +65,18 @@ STR_LEN = 15
     sumLabel    BYTE    "The sum of these numbers is: ",0
     aveLabel    BYTE    "The rounded average is: ",0
     goodbye     BYTE    13,10,"Goodbye, thanks for playing!",13,10,0
-    numbers     SDWORD  NUM_COUNT DUP(?)
+    number      SDWORD  ?
+    numberArr   SDWORD  NUM_COUNT DUP(?)
     sum         SDWORD  ?
     average     SDWORD  ?
     
 .code
 main PROC
     ; set up framing and call ReadVal
+    PUSH    OFFSET prompt
+    PUSH    OFFSET errorMsg
+    PUSH    OFFSET number
+    PUSH    OFFSET buffer
     CALL    ReadVal
     
     ; set up framing and call WriteVal
@@ -91,13 +96,21 @@ main ENDP
 ; Postconditions: 
 ; 
 ; Receives: 
-; 
+;       [EBP + 5*4] = the address of a string prompt
+;       [EBP + 4*4] = the address of a string error message
+;       [EBP + 3*4] = the address of an SDWORD
+;       [EBP + 2*4] = the address of a string to hold user input
+;
 ; Returns: 
 ; ---------------------------------------------------------------
 ReadVal PROC
-    
-    
-    RET
+    PUSH    EBP                             ; save registers
+    MOV     EBP, ESP
+
+
+    MOV     ESP, EBP                        ; restore registers                    
+    POP     EBP
+    RET     4*4
 ReadVal ENDP
 
 
