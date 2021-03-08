@@ -76,7 +76,7 @@ MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
     intro2      BYTE    "Please enter 10 signed decimal integers.",13,10,
                         "Each number must be small enough to fit in a 32 bit register. After you input the ",13,10,
                         "numbers, I will display the numbers entered, their sum, and the average.",13,10,13,10,0
-    prompt      BYTE    "Please enter an signed number: ",0
+    prompt      BYTE    "Please enter a signed number: ",0
     errorMsg    BYTE    "ERROR: You did not enter a signed number or your number was too big.",13,10,
                         "Please try again: ",0
     numsLabel   BYTE    "You entered the following numbers: ",13,10,0
@@ -128,12 +128,16 @@ main ENDP
 ; Returns: 
 ; ---------------------------------------------------------------
 ReadVal PROC
-    PUSH    EBP                             ; save registers
-    MOV     EBP, ESP
+;    PUSH    EBP                             ; save registers
+;    MOV     EBP, ESP
+    LOCAL   byteCount: DWORD
+
+    ; call mGetSring to get user input
+    mGetSring [EBP + 6*4], [EBP + 4*4], [EBP + 3*4], byteCount
 
 
-    MOV     ESP, EBP                        ; restore registers
-    POP     EBP
+;    MOV     ESP, EBP                        ; restore registers
+;    POP     EBP
     RET     7*4
 ReadVal ENDP
 
