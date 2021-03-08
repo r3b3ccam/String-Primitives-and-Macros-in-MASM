@@ -1,8 +1,8 @@
 TITLE Project 6 - String Primitives and Macros     (Proj6_mckeever.asm)
 
 ; Author: Rebecca Mckeever
-; Last Modified: 03/07/2021
-; OSU email address: ONID_ID@oregonstate.edu
+; Last Modified: 03/08/2021
+; OSU email address: mckeever@oregonstate.edu
 ; Course number/section:   CS271 Section 400
 ; Project Number: 6                Due Date: 03/16/2021
 ; Description: ***
@@ -28,6 +28,16 @@ mGetSring MACRO     promptStr, buffer, bufferSize, numChars
     PUSH    ECX
     PUSH    EDX
 
+    ; display prompt and read user input
+    MOV     EDX, promptStr
+    CALL    WriteString
+    MOV     EDX, buffer
+    MOV     ECX, bufferSize
+    CALL    ReadString
+
+    ; move input and number of characters read to appropriate memory locations
+    MOV     buffer, EDX
+    MOV     numChars, EAX
 
     POP     EDX                             ; restore registers
     POP     ECX
