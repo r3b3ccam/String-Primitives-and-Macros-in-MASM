@@ -1,0 +1,11 @@
+# This is a simple .gitignore that will ignore everything
+# except this file, and .asm files
+
+#ignore everything
+*
+*/
+
+#unignore .asm, and this file, and the README
+!.gitignore
+!*.asm
+!*.md
