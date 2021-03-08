@@ -51,9 +51,11 @@ ENDM
 ; (insert constant definitions here)
 NUM_COUNT = 10
 STR_LEN = 15
+MIN_VAL = -80000000h            ; -2^31
+MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
 
 .data
-    buffer      BYTE    STR_LEN DUP(0)
+    userInput   BYTE    STR_LEN DUP(0)
     intro1      BYTE    "Project 6: Designing low-level I/O procedures by Rebecca Mckeever",13,10,13,10,0
     intro2      BYTE    "Please enter 10 signed decimal integers.",13,10,
                         "Each number must be small enough to fit in a 32 bit register. After you input the ",13,10,
@@ -73,10 +75,13 @@ STR_LEN = 15
 .code
 main PROC
     ; set up framing and call ReadVal
+    PUSH    MIN_VAL
+    PUSH    MAX_VAL
     PUSH    OFFSET prompt
     PUSH    OFFSET errorMsg
+    PUSH    OFFSET userInput
+    PUSH    SIZEOF userInput
     PUSH    OFFSET number
-    PUSH    OFFSET buffer
     CALL    ReadVal
     
     ; set up framing and call WriteVal
@@ -96,10 +101,13 @@ main ENDP
 ; Postconditions: 
 ; 
 ; Receives: 
-;       [EBP + 5*4] = the address of a string prompt
-;       [EBP + 4*4] = the address of a string error message
-;       [EBP + 3*4] = the address of an SDWORD
-;       [EBP + 2*4] = the address of a string to hold user input
+;       [EBP + 8*4] = minimum value of user input
+;       [EBP + 7*4] = maximum value of user input
+;       [EBP + 6*4] = the address of a string prompt
+;       [EBP + 5*4] = the address of a string error message
+;       [EBP + 4*4] = the address of a string to hold user input
+;       [EBP + 3*4] = size of the string that holds user input
+;       [EBP + 2*4] = the address of an SDWORD
 ;
 ; Returns: 
 ; ---------------------------------------------------------------
@@ -108,9 +116,9 @@ ReadVal PROC
     MOV     EBP, ESP
 
 
-    MOV     ESP, EBP                        ; restore registers                    
+    MOV     ESP, EBP                        ; restore registers
     POP     EBP
-    RET     4*4
+    RET     7*4
 ReadVal ENDP
 
 
