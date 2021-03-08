@@ -19,12 +19,54 @@ INCLUDE Irvine32.inc
 
 .code
 main PROC
-
-; (insert executable instructions here)
-
-	Invoke ExitProcess,0	; exit to operating system
+    ; set up framing and call ReadVal
+    CALL    ReadVal
+    
+    ; set up framing and call WriteVal
+    CALL    WriteVal
+    
+    Invoke ExitProcess,0    ; exit to operating system
 main ENDP
 
-; (insert additional procedures here)
+
+; ---------------------------------------------------------------
+; Name: ReadVal
+; 
+; 
+; 
+; Preconditions: 
+; 
+; Postconditions: 
+; 
+; Receives: 
+; 
+; Returns: 
+; ---------------------------------------------------------------
+ReadVal PROC
+    
+    
+    RET
+ReadVal ENDP
+
+
+; ---------------------------------------------------------------
+; Name: WriteVal
+; 
+; 
+; 
+; Preconditions: 
+; 
+; Postconditions: 
+; 
+; Receives: 
+; 
+; Returns: 
+; ---------------------------------------------------------------
+WriteVal PROC
+    
+    
+    RET
+WriteVal ENDP
+
 
 END main
