@@ -66,7 +66,7 @@ ENDM
 
 ; (insert constant definitions here)
 NUM_COUNT = 10
-STR_LEN = 15
+STR_LEN = 22                    ; extra bytes to account for user entering multiple leading 0's
 MIN_VAL = -80000000h            ; -2^31
 MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
 
@@ -77,13 +77,12 @@ MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
                         "Each number must be small enough to fit in a 32 bit register. After you input the ",13,10,
                         "numbers, I will display the numbers entered, their sum, and the average.",13,10,13,10,0
     prompt      BYTE    "Please enter a signed number: ",0
-    errorMsg    BYTE    "ERROR: You did not enter a signed number or your number was too big.",13,10,
-                        "Please try again: ",0
+    errorMsg    BYTE    "ERROR: You did not enter a signed number, or your number was too big. Please try again.",13,10,0
     numsLabel   BYTE    "You entered the following numbers: ",13,10,0
     sumLabel    BYTE    "The sum of these numbers is: ",0
     aveLabel    BYTE    "The rounded average is: ",0
     goodbye     BYTE    13,10,"Goodbye, thanks for playing!",13,10,0
-    number      SDWORD  ?
+    number      SDWORD  0
     numberArr   SDWORD  NUM_COUNT DUP(?)
     sum         SDWORD  ?
     average     SDWORD  ?
@@ -128,16 +127,109 @@ main ENDP
 ; Returns: 
 ; ---------------------------------------------------------------
 ReadVal PROC
-;    PUSH    EBP                             ; save registers
-;    MOV     EBP, ESP
-    LOCAL   byteCount: DWORD
+    LOCAL   byteCount: DWORD, curChar: SDWORD, isNegative: BYTE
+    PUSH    EAX                                 ; save registers
+    PUSH    EBX
+    PUSH    ECX
+    PUSH    EDX
+    PUSH    EDI
+    PUSH    ESI
 
+    MOV     EDI, [EBP + 2*4]
+    MOV     ESI, [EBP + 4*4]
+_getInput:
+    MOV     isNegative, 0
     ; call mGetSring to get user input
-    mGetSring [EBP + 6*4], [EBP + 4*4], [EBP + 3*4], byteCount
+    mGetSring [EBP + 6*4], ESI, [EBP + 3*4], byteCount
 
+;    MOV     ESI, [EBP + 4*4]
+    MOV     ECX, byteCount
+    CMP     ECX, 0
+    JE      _invalid
 
-;    MOV     ESP, EBP                        ; restore registers
-;    POP     EBP
+    ; get first character of input string to check for possible sign
+    CLD
+    LODSB
+    MOVZX   EAX, AL
+    MOV     curChar, EAX
+
+    CMP     curChar, '+'
+    JE      _checkLength
+    CMP     curChar, '-'
+    JE      _checkLength
+    JMP     _checkNumerals
+
+_checkLength:
+    CMP     ECX, 1
+    JLE     _invalid
+
+    CMP     curChar, '-'
+    JNE     _endLoop
+    MOV     isNegative, 1
+    JMP     _endLoop
+
+_charLoop:
+    CLD
+    LODSB
+    MOVZX   EAX, AL
+    MOV     curChar, EAX
+    JMP _checkNumerals
+
+_endLoop:
+    LOOP    _charLoop
+    JMP     _end
+
+_checkNumerals:
+    CMP     curChar, '9'
+    JG      _invalid
+    CMP     curChar, '0'
+    JL      _invalid
+
+    MOV     EAX, [EDI]
+    MOV     EBX, 10
+    MUL     EBX
+    ADD     EAX, curChar
+    SUB     EAX, '0'
+    MOV     [EDI], EAX
+    JMP     _checkLimits
+
+_checkLimits:
+    ; check sign to determine which limit to compare to
+    CMP     isNegative, 1
+    JE      _checkMin
+
+    CMP     EAX, [EBP + 7*4]
+    JG      _invalid
+    CMP     EAX, 0
+    JL      _invalid
+ ;   CMP     isNegative, 1
+ ;   JNE     _invalid
+    JMP     _endLoop
+
+_checkMin:
+    NEG     EAX
+    CMP     EAX, [EBP + 8*4]
+    JL      _invalid
+    CMP     EAX, 0
+    JG      _invalid
+    JMP     _endLoop
+
+_invalid:
+    MOV     EBX, 0
+    MOV     [EDI], EBX
+    MOV     EDX, [EBP + 5*4]
+    CALL    WriteString
+    JMP     _getInput
+
+_end:
+    MOV     [EDI], EAX                          ; move possibly negated value
+    CALL    WriteInt
+    POP     ESI                                 ; restore registers
+    POP     EDI
+    POP     EDX
+    POP     ECX
+    POP     EBX
+    POP     EAX
     RET     7*4
 ReadVal ENDP
 
