@@ -69,7 +69,7 @@ ENDM
 
 
 ; (insert constant definitions here)
-NUM_COUNT = 10
+NUM_COUNT = 2
 STR_LEN = 100                   ; includes extra bytes to account for user entering multiple leading 0's
 MIN_VAL = -80000000h            ; -2^31
 MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
@@ -83,13 +83,14 @@ MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
     prompt      BYTE    "Please enter a signed number: ",0
     errorMsg    BYTE    "ERROR: You did not enter a signed number, or your number was too big. Please try again.",13,10,0
     numsLabel   BYTE    13,10,"You entered the following numbers: ",13,10,0
-    sumLabel    BYTE    "The sum of these numbers is: ",0
-    aveLabel    BYTE    "The rounded average is: ",0
+    sumLabel    BYTE    13,10,"The sum of these numbers is: ",0
+    aveLabel    BYTE    13,10,"The rounded average is: ",0
     goodbye     BYTE    13,10,"Goodbye, thanks for playing!",13,10,0
+    commaSp     BYTE    ", ",0
  ;   number      SDWORD  0
     numberArr   SDWORD  NUM_COUNT DUP(?)
-    sum         SDWORD  ?
-    average     SDWORD  ?
+  ;  sum         SDWORD  ?
+  ;  average     SDWORD  ?
     
 .code
 main PROC
@@ -105,6 +106,7 @@ main PROC
     CALL    getIntegers
     
     ; set up framing and call displayResults
+    PUSH    OFFSET commaSp
     PUSH    OFFSET numsLabel
     PUSH    OFFSET sumLabel
     PUSH    OFFSET aveLabel
@@ -140,7 +142,7 @@ main ENDP
 ; Returns: 
 ; ---------------------------------------------------------------
 ReadVal PROC
-    LOCAL   byteCount: DWORD, curChar: SDWORD, isNegative: BYTE
+    LOCAL   byteCount: DWORD, curChar: DWORD, isNegative: BYTE
     PUSH    EAX                                 ; save registers
     PUSH    EBX
     PUSH    ECX
@@ -200,15 +202,26 @@ _checkNumerals:
     CMP     curChar, '0'
     JL      _invalid
 
+    SUB     curChar, '0'
+    CMP     isNegative, 1
+    JNE     _continue
+    MOV     EAX, -1
+    MOV     EDX, 0
+    IMUL    EAX, curChar
+    MOV     curChar, EAX
+
+_continue:
     MOV     EAX, [EDI]
     MOV     EBX, 10
-    MUL     EBX
+    MOV     EDX, 0
+    IMUL    EBX
+    JO      _invalid
     ADD     EAX, curChar
-    SUB     EAX, '0'
+    JO      _invalid
     MOV     [EDI], EAX
-    JMP     _checkLimits
+    JMP     _checkPositive
 
-_checkLimits:
+_checkPositive:
     ; check sign to determine which limit to compare to
     CMP     isNegative, 1
     JE      _checkMin
@@ -222,7 +235,7 @@ _checkLimits:
     JMP     _endLoop
 
 _checkMin:
-    NEG     EAX
+   ; NEG     EAX
     CMP     EAX, [EBP + 8*4]
     JL      _invalid
     CMP     EAX, 0
@@ -289,7 +302,7 @@ WriteVal ENDP
 ; Returns: 
 ; ---------------------------------------------------------------
 getIntegers PROC
-    LOCAL   number: DWORD
+    LOCAL   number: SDWORD
     PUSH    EAX
     PUSH    EBX
     PUSH    ECX
@@ -335,24 +348,57 @@ getIntegers ENDP
 ; Postconditions: 
 ; 
 ; Receives: 
+;       [EBP + 7*4] = the address of a string delimiter to display 
+;                       between numbers in list
 ;       [EBP + 6*4] = the address of a string label for the list of numbers
 ;       [EBP + 5*4] = the address of a string label for the sum
 ;       [EBP + 4*4] = the address of a string label for the average
-;       [EBP + 3*4] = number of values to get from user
+;       [EBP + 3*4] = number of values received from user
 ;       [EBP + 2*4] = the address of an array of SDWORDs
 ;
 ; Returns: 
 ; ---------------------------------------------------------------
 displayResults PROC
-    PUSH    EBP                     ; save registers
-    MOV     EBP, ESP
+    LOCAL   sum: SDWORD, average: SDWORD 
+    PUSH    EAX                     ; save registers
+    PUSH    ECX                     
+    PUSH    EDX
+    PUSH    ESI
     
+    ; initialize sum, loop counter, array pointer, and direction flag
+    MOV     sum, 0
+    MOV     ECX, [EBP + 3*4]
+    MOV     ESI, [EBP + 2*4]
+    CLD
+    
+    ; display label for list of numbers
     mDisplayString [EBP + 6*4]
+
+; step through array of numbers; for each value, add to sum and display it
+_processArray:
+    LODSD                           ; move current value into accumulator
+    ADD     sum, EAX
+
+    ; set up framing and call WriteVal
+    PUSH    EAX
+    CALL    WriteVal
+    CMP     ECX, 1                  ; skip displaying delimiter after last value
+    JE      _endLoop                
+    mDisplayString [EBP + 7*4]      ; display delimiter
+_endLoop:
+    LOOP    _processArray
     
+    ; display label for sum
+    mDisplayString [EBP + 5*4]
     
-    MOV     ESP, EBP                ; restore registers 
-    POP     EBP
-    RET     5*4
+    ; display label for average
+    mDisplayString [EBP + 4*4]
+    
+    POP     ESI                     ; restore registers 
+    POP     EDX
+    POP     ECX                     
+    POP     EAX
+    RET     6*4
 displayResults ENDP
 
 
