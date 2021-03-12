@@ -10,7 +10,7 @@ TITLE Project 6 - String Primitives and Macros     (Proj6_mckeever.asm)
 INCLUDE Irvine32.inc
 
 ; ---------------------------------------------------------------
-; Name: mGetSring
+; Name: mGetString
 ;
 ; 
 ;
@@ -23,14 +23,13 @@ INCLUDE Irvine32.inc
 ;
 ; returns: 
 ; ---------------------------------------------------------------
-mGetSring MACRO     promptStr, buffer, bufferSize, numChars
+mGetString MACRO     promptStr, buffer, bufferSize, numChars
     PUSH    EAX                             ; save registers
     PUSH    ECX
     PUSH    EDX
 
     ; display prompt and read user input
-    MOV     EDX, promptStr
-    CALL    WriteString
+    mDisplayString promptStr
     MOV     EDX, buffer
     MOV     ECX, bufferSize
     CALL    ReadString
@@ -59,14 +58,19 @@ ENDM
 ;
 ; returns: 
 ; ---------------------------------------------------------------
-mDisplayString MACRO
+mDisplayString MACRO inString
+    PUSH    EDX                             ; save register
+    
+    MOV     EDX, inString
+    CALL    WriteString
 
-
+    POP     EDX                             ; restore register
 ENDM
+
 
 ; (insert constant definitions here)
 NUM_COUNT = 10
-STR_LEN = 22                    ; extra bytes to account for user entering multiple leading 0's
+STR_LEN = 100                   ; includes extra bytes to account for user entering multiple leading 0's
 MIN_VAL = -80000000h            ; -2^31
 MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
 
@@ -82,23 +86,27 @@ MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
     sumLabel    BYTE    "The sum of these numbers is: ",0
     aveLabel    BYTE    "The rounded average is: ",0
     goodbye     BYTE    13,10,"Goodbye, thanks for playing!",13,10,0
-    number      SDWORD  0
+ ;   number      SDWORD  0
     numberArr   SDWORD  NUM_COUNT DUP(?)
     sum         SDWORD  ?
     average     SDWORD  ?
     
 .code
 main PROC
-    ; set up framing and call ReadVal
+    ; set up framing and call getIntegers to get 10 integers from user
+    PUSH    NUM_COUNT
     PUSH    MIN_VAL
     PUSH    MAX_VAL
     PUSH    OFFSET prompt
     PUSH    OFFSET errorMsg
     PUSH    OFFSET userInput
     PUSH    SIZEOF userInput
-    PUSH    OFFSET number
-    CALL    ReadVal
+    PUSH    OFFSET numberArr
+    CALL    getIntegers
     
+ ;   MOV     EAX, number
+ ;   CALL    WriteInt
+
     ; set up framing and call WriteVal
     CALL    WriteVal
     
@@ -137,10 +145,12 @@ ReadVal PROC
 
     MOV     EDI, [EBP + 2*4]
     MOV     ESI, [EBP + 4*4]
+    MOV     EBX, 0
+    MOV     [EDI], EBX
 _getInput:
     MOV     isNegative, 0
-    ; call mGetSring to get user input
-    mGetSring [EBP + 6*4], ESI, [EBP + 3*4], byteCount
+    ; call mGetString to get user input
+    mGetString [EBP + 6*4], ESI, [EBP + 3*4], byteCount
 
 ;    MOV     ESI, [EBP + 4*4]
     MOV     ECX, byteCount
@@ -217,13 +227,11 @@ _checkMin:
 _invalid:
     MOV     EBX, 0
     MOV     [EDI], EBX
-    MOV     EDX, [EBP + 5*4]
-    CALL    WriteString
+    mDisplayString [EBP + 5*4]
     JMP     _getInput
 
 _end:
     MOV     [EDI], EAX                          ; move possibly negated value
-    CALL    WriteInt
     POP     ESI                                 ; restore registers
     POP     EDI
     POP     EDX
@@ -252,6 +260,64 @@ WriteVal PROC
     
     RET
 WriteVal ENDP
+
+
+; ---------------------------------------------------------------
+; Name: getIntegers
+; 
+; 
+; 
+; Preconditions: 
+; 
+; Postconditions: 
+; 
+; Receives: 
+;       [EBP + 9*4] = number of values to get from user
+;       [EBP + 8*4] = minimum value of user input
+;       [EBP + 7*4] = maximum value of user input
+;       [EBP + 6*4] = the address of a string prompt
+;       [EBP + 5*4] = the address of a string error message
+;       [EBP + 4*4] = the address of a string to hold user input
+;       [EBP + 3*4] = size of the string that holds user input
+;       [EBP + 2*4] = the address of an array of SDWORDs
+;
+; Returns: 
+; ---------------------------------------------------------------
+getIntegers PROC
+    LOCAL   number: DWORD
+    PUSH    EAX
+    PUSH    EBX
+    PUSH    ECX
+    PUSH    EDI
+
+    MOV     EDI, [EBP + 2*4]
+    MOV     ECX, [EBP + 9*4]
+    LEA     EBX, number
+    CLD
+    
+_fillArray:
+    ; set up framing and call ReadVal to get an integer from user
+    PUSH    [EBP + 8*4]
+    PUSH    [EBP + 7*4]
+    PUSH    [EBP + 6*4]
+    PUSH    [EBP + 5*4]
+    PUSH    [EBP + 4*4]
+    PUSH    [EBP + 3*4]
+    PUSH    EBX
+    CALL    ReadVal
+    
+    MOV     EAX, EBX
+    STOSD                           ; place value from user in array
+ ;   MOV     [EDI], EAX              
+ ;   ADD     EDI, 4                  ; TYPE of array 
+    LOOP    _fillArray
+
+    POP     EDI
+    POP     ECX
+    POP     EBX
+    POP     EAX
+    RET 8*4
+getIntegers ENDP
 
 
 END main
