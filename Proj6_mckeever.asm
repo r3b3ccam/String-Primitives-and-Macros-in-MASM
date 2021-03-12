@@ -1,7 +1,7 @@
 TITLE Project 6 - String Primitives and Macros     (Proj6_mckeever.asm)
 
 ; Author: Rebecca Mckeever
-; Last Modified: 03/08/2021
+; Last Modified: 03/12/2021
 ; OSU email address: mckeever@oregonstate.edu
 ; Course number/section:   CS271 Section 400
 ; Project Number: 6                Due Date: 03/16/2021
@@ -82,7 +82,7 @@ MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
                         "numbers, I will display the numbers entered, their sum, and the average.",13,10,13,10,0
     prompt      BYTE    "Please enter a signed number: ",0
     errorMsg    BYTE    "ERROR: You did not enter a signed number, or your number was too big. Please try again.",13,10,0
-    numsLabel   BYTE    "You entered the following numbers: ",13,10,0
+    numsLabel   BYTE    13,10,"You entered the following numbers: ",13,10,0
     sumLabel    BYTE    "The sum of these numbers is: ",0
     aveLabel    BYTE    "The rounded average is: ",0
     goodbye     BYTE    13,10,"Goodbye, thanks for playing!",13,10,0
@@ -104,8 +104,13 @@ main PROC
     PUSH    OFFSET numberArr
     CALL    getIntegers
     
- ;   MOV     EAX, number
- ;   CALL    WriteInt
+    ; set up framing and call displayResults
+    PUSH    OFFSET numsLabel
+    PUSH    OFFSET sumLabel
+    PUSH    OFFSET aveLabel
+    PUSH    NUM_COUNT
+    PUSH    OFFSET numberArr
+    CALL    displayResults
 
     ; set up framing and call WriteVal
     CALL    WriteVal
@@ -296,7 +301,7 @@ getIntegers PROC
     CLD
     
 _fillArray:
-    ; set up framing and call ReadVal to get an integer from user
+    ; set up framing and call ReadVal to get an integer from user    
     PUSH    [EBP + 8*4]
     PUSH    [EBP + 7*4]
     PUSH    [EBP + 6*4]
@@ -316,8 +321,39 @@ _fillArray:
     POP     ECX
     POP     EBX
     POP     EAX
-    RET 8*4
+    RET     8*4
 getIntegers ENDP
+
+
+; ---------------------------------------------------------------
+; Name: displayResults
+; 
+; 
+; 
+; Preconditions: 
+; 
+; Postconditions: 
+; 
+; Receives: 
+;       [EBP + 6*4] = the address of a string label for the list of numbers
+;       [EBP + 5*4] = the address of a string label for the sum
+;       [EBP + 4*4] = the address of a string label for the average
+;       [EBP + 3*4] = number of values to get from user
+;       [EBP + 2*4] = the address of an array of SDWORDs
+;
+; Returns: 
+; ---------------------------------------------------------------
+displayResults PROC
+    PUSH    EBP                     ; save registers
+    MOV     EBP, ESP
+    
+    mDisplayString [EBP + 6*4]
+    
+    
+    MOV     ESP, EBP                ; restore registers 
+    POP     EBP
+    RET     5*4
+displayResults ENDP
 
 
 END main
