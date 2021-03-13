@@ -69,7 +69,7 @@ ENDM
 
 
 ; (insert constant definitions here)
-NUM_COUNT = 3
+NUM_COUNT = 10
 STR_LEN = 100                   ; includes extra bytes to account for user entering multiple leading 0's
 MIN_VAL = -80000000h            ; -2^31
 MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
@@ -201,7 +201,6 @@ _getInput:
     ; call mGetString to get user input
     mGetString [EBP + 6*4], ESI, [EBP + 3*4], byteCount
 
-;    MOV     ESI, [EBP + 4*4]
     MOV     ECX, byteCount
     CMP     ECX, 0
     JE      _invalid
@@ -272,12 +271,9 @@ _checkPositive:
     JG      _invalid
     CMP     EAX, 0
     JL      _invalid
- ;   CMP     isNegative, 1
- ;   JNE     _invalid
     JMP     _endLoop
 
 _checkMin:
-   ; NEG     EAX
     CMP     EAX, [EBP + 8*4]
     JL      _invalid
     CMP     EAX, 0
@@ -454,17 +450,17 @@ WriteVal ENDP
 ; Returns: 
 ; ---------------------------------------------------------------
 getIntegers PROC
-    LOCAL   number: SDWORD
+    PUSH    EBP                             ; save registers
+    MOV     EBP, ESP
     PUSH    EAX
     PUSH    EBX
     PUSH    ECX
     PUSH    EDI
 
+    ; move address of array and loop counter to registers
     MOV     EDI, [EBP + 2*4]
     MOV     ECX, [EBP + 9*4]
-    LEA     EBX, number
-    CLD
-    
+
 _fillArray:
     ; set up framing and call ReadVal to get an integer from user    
     PUSH    [EBP + 8*4]
@@ -476,16 +472,18 @@ _fillArray:
     PUSH    EBX
     CALL    ReadVal
     
-    MOV     EAX, number
-    STOSD                           ; place value from user in array
- ;   MOV     [EDI], EAX              
- ;   ADD     EDI, 4                  ; TYPE of array 
+    ; place value from user in array using DWORD primitives
+    MOV     EAX, [EBX]
+    CLD
+    STOSD
     LOOP    _fillArray
 
-    POP     EDI
+    POP     EDI                             ; restore registers
     POP     ECX
     POP     EBX
     POP     EAX
+    MOV     ESP, EBP
+    POP     EBP
     RET     8*4
 getIntegers ENDP
 
