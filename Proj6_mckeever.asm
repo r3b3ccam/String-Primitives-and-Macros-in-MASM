@@ -69,7 +69,7 @@ ENDM
 
 
 ; (insert constant definitions here)
-NUM_COUNT = 2
+NUM_COUNT = 3
 STR_LEN = 100                   ; includes extra bytes to account for user entering multiple leading 0's
 MIN_VAL = -80000000h            ; -2^31
 MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
@@ -505,8 +505,40 @@ _endLoop:
     PUSH    EAX
     CALL    WriteVal
 
-    ; display label for average and call WriteVal to display average
+    ; display label for average
     mDisplayString [EBP + 4*4]
+
+    ; calculate and display average
+    MOV     EBX, [EBP + 3*4]
+    CDQ
+    IDIV    EBX
+    IMUL    EDX, 2
+    CMP     EDX, 0
+    JE      _displayAverage
+    JL      _negative
+    JMP     _positive
+
+_negative:
+    CMP     EDX, EBX
+    JLE     _roundDown
+    JMP     _displayAverage
+
+_roundDown:
+    DEC     EAX
+    JMP     _displayAverage
+
+_positive:
+    CMP     EDX, EBX
+    JGE     _roundUp
+    JMP     _displayAverage
+
+_roundUp:
+    INC     EAX
+    JMP     _displayAverage
+
+_displayAverage:
+    PUSH    EAX
+    CALL    WriteVal
 
     POP     ESI                     ; restore registers
     POP     EDX
