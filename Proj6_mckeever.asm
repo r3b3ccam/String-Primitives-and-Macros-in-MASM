@@ -71,8 +71,6 @@ ENDM
 ; (insert constant definitions here)
 NUM_COUNT = 2
 STR_LEN = 100                   ; includes extra bytes to account for user entering multiple leading 0's
-MIN_VAL = -80000000h            ; -2^31
-MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
 
 .data
     userInput   BYTE    STR_LEN DUP(0)
@@ -100,8 +98,6 @@ main PROC
 
     ; set up framing and call getIntegers to get integers from user
     PUSH    NUM_COUNT
-    PUSH    MIN_VAL
-    PUSH    MAX_VAL
     PUSH    OFFSET prompt
     PUSH    OFFSET errorMsg
     PUSH    OFFSET userInput
@@ -172,9 +168,7 @@ intro ENDP
 ; 
 ; Postconditions: 
 ; 
-; Receives: 
-;       [EBP + 8*4] = minimum value of user input
-;       [EBP + 7*4] = maximum value of user input
+; Receives:
 ;       [EBP + 6*4] = the address of a string prompt
 ;       [EBP + 5*4] = the address of a string error message
 ;       [EBP + 4*4] = the address of a string to hold user input
@@ -260,24 +254,6 @@ _continue:
     ADD     EAX, curChar
     JO      _invalid
     MOV     [EDI], EAX
-    JMP     _checkPositive
-
-_checkPositive:
-    ; check sign to determine which limit to compare to
-    CMP     isNegative, 1
-    JE      _checkMin
-
-    CMP     EAX, [EBP + 7*4]
-    JG      _invalid
-    CMP     EAX, 0
-    JL      _invalid
-    JMP     _endLoop
-
-_checkMin:
-    CMP     EAX, [EBP + 8*4]
-    JL      _invalid
-    CMP     EAX, 0
-    JG      _invalid
     JMP     _endLoop
 
 _invalid:
@@ -287,14 +263,13 @@ _invalid:
     JMP     _getInput
 
 _end:
-    MOV     [EDI], EAX                          ; move possibly negated value
     POP     ESI                                 ; restore registers
     POP     EDI
     POP     EDX
     POP     ECX
     POP     EBX
     POP     EAX
-    RET     7*4
+    RET     5*4
 ReadVal ENDP
 
 
@@ -438,9 +413,7 @@ WriteVal ENDP
 ; Postconditions: 
 ; 
 ; Receives: 
-;       [EBP + 9*4] = number of values to get from user
-;       [EBP + 8*4] = minimum value of user input
-;       [EBP + 7*4] = maximum value of user input
+;       [EBP + 7*4] = number of values to get from user
 ;       [EBP + 6*4] = the address of a string prompt
 ;       [EBP + 5*4] = the address of a string error message
 ;       [EBP + 4*4] = the address of a string to hold user input
@@ -459,12 +432,10 @@ getIntegers PROC
 
     ; move address of array and loop counter to registers
     MOV     EDI, [EBP + 2*4]
-    MOV     ECX, [EBP + 9*4]
+    MOV     ECX, [EBP + 7*4]
 
 _fillArray:
-    ; set up framing and call ReadVal to get an integer from user    
-    PUSH    [EBP + 8*4]
-    PUSH    [EBP + 7*4]
+    ; set up framing and call ReadVal to get an integer from user
     PUSH    [EBP + 6*4]
     PUSH    [EBP + 5*4]
     PUSH    [EBP + 4*4]
@@ -484,7 +455,7 @@ _fillArray:
     POP     EAX
     MOV     ESP, EBP
     POP     EBP
-    RET     8*4
+    RET     6*4
 getIntegers ENDP
 
 
