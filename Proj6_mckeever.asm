@@ -69,7 +69,7 @@ ENDM
 
 
 ; (insert constant definitions here)
-NUM_COUNT = 10
+NUM_COUNT = 2
 STR_LEN = 100                   ; includes extra bytes to account for user entering multiple leading 0's
 MIN_VAL = -80000000h            ; -2^31
 MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
@@ -509,26 +509,28 @@ getIntegers ENDP
 ; Returns: 
 ; ---------------------------------------------------------------
 displayResults PROC
-    LOCAL   sum: SDWORD, average: SDWORD 
-    PUSH    EAX                     ; save registers
-    PUSH    ECX                     
+    PUSH    EBP                             ; save registers
+    MOV     EBP, ESP
+    PUSH    EAX
+    PUSH    EBX
+    PUSH    ECX
     PUSH    EDX
     PUSH    ESI
     
-    ; initialize sum, average, loop counter, and array pointer
-    MOV     sum, 0
-    MOV     average, 0
+    ; initialize sum (EBX), loop counter, and array pointer
+    MOV     EBX, 0
     MOV     ECX, [EBP + 3*4]
     MOV     ESI, [EBP + 2*4]
 
     ; display label for list of numbers
     mDisplayString [EBP + 6*4]
 
-; step through array of numbers; for each value, add to sum and display it
+; step through array of numbers with DWORD primitives; for each value,
+; add to sum and display it
 _processArray:
     CLD
-    LODSD                           ; move current value into accumulator
-    ADD     sum, EAX
+    LODSD
+    ADD     EBX, EAX                ; add current value to sum
 
     ; call WriteVal to display value within list
     PUSH    EAX
@@ -541,26 +543,28 @@ _endLoop:
 
     ; display label for sum and call WriteVal to display sum
     mDisplayString [EBP + 5*4]
-    MOV     EAX, sum
-    PUSH    EAX
+    PUSH    EBX
     CALL    WriteVal
 
     ; display label for average
     mDisplayString [EBP + 4*4]
 
-    ; calculate and display average
+    ; calculate and display rounded average
+    MOV     EAX, EBX
     MOV     EBX, [EBP + 3*4]
     CDQ
     IDIV    EBX
-    IMUL    EDX, 2
+    IMUL    EDX, 2                  ; double remainder
     CMP     EDX, 0
     JE      _displayAverage
     JL      _negative
     JMP     _positive
 
+; compare doubled remainder to number of values to determine rounding
 _negative:
+    NEG     EDX
     CMP     EDX, EBX
-    JLE     _roundDown
+    JGE     _roundDown
     JMP     _displayAverage
 
 _roundDown:
@@ -583,7 +587,10 @@ _displayAverage:
     POP     ESI                     ; restore registers
     POP     EDX
     POP     ECX
+    POP     EBX
     POP     EAX
+    MOV     ESP, EBP
+    POP     EBP
     RET     6*4
 displayResults ENDP
 
