@@ -1,7 +1,7 @@
 TITLE Project 6 - String Primitives and Macros     (Proj6_mckeever.asm)
 
 ; Author: Rebecca Mckeever
-; Last Modified: 03/12/2021
+; Last Modified: 03/13/2021
 ; OSU email address: mckeever@oregonstate.edu
 ; Course number/section:   CS271 Section 400
 ; Project Number: 6                Due Date: 03/16/2021
@@ -475,21 +475,22 @@ displayResults PROC
     PUSH    EDX
     PUSH    ESI
     
-    ; initialize sum, loop counter, array pointer, and direction flag
+    ; initialize sum, average, loop counter, and array pointer
     MOV     sum, 0
+    MOV     average, 0
     MOV     ECX, [EBP + 3*4]
     MOV     ESI, [EBP + 2*4]
-    CLD
-    
+
     ; display label for list of numbers
     mDisplayString [EBP + 6*4]
 
 ; step through array of numbers; for each value, add to sum and display it
 _processArray:
+    CLD
     LODSD                           ; move current value into accumulator
     ADD     sum, EAX
 
-    ; set up framing and call WriteVal
+    ; call WriteVal to display value within list
     PUSH    EAX
     CALL    WriteVal
     CMP     ECX, 1                  ; skip displaying delimiter after last value
@@ -497,14 +498,17 @@ _processArray:
     mDisplayString [EBP + 7*4]      ; display delimiter
 _endLoop:
     LOOP    _processArray
-    
-    ; display label for sum
+
+    ; display label for sum and call WriteVal to display sum
     mDisplayString [EBP + 5*4]
-    
-    ; display label for average
+    MOV     EAX, sum
+    PUSH    EAX
+    CALL    WriteVal
+
+    ; display label for average and call WriteVal to display average
     mDisplayString [EBP + 4*4]
-    
-    POP     ESI                     ; restore registers 
+
+    POP     ESI                     ; restore registers
     POP     EDX
     POP     ECX
     POP     EAX
