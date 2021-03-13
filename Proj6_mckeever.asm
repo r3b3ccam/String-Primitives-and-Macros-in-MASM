@@ -23,7 +23,7 @@ INCLUDE Irvine32.inc
 ;
 ; returns: 
 ; ---------------------------------------------------------------
-mGetString MACRO     promptStr, buffer, bufferSize, numChars
+mGetString MACRO     promptStr:REQ, buffer:REQ, bufferSize:REQ, numChars:REQ
     PUSH    EAX                             ; save registers
     PUSH    ECX
     PUSH    EDX
@@ -58,7 +58,7 @@ ENDM
 ;
 ; returns: 
 ; ---------------------------------------------------------------
-mDisplayString MACRO inString
+mDisplayString MACRO inString:REQ
     PUSH    EDX                             ; save register
     
     MOV     EDX, inString
@@ -115,7 +115,7 @@ main PROC
     CALL    displayResults
 
     ; set up framing and call WriteVal
-    CALL    WriteVal
+    ;CALL    WriteVal
     
     Invoke ExitProcess,0    ; exit to operating system
 main ENDP
@@ -270,13 +270,123 @@ ReadVal ENDP
 ; Postconditions: 
 ; 
 ; Receives: 
-; 
+;       [EBP + 2*4] = the value of an SDWORD
+;
 ; Returns: 
 ; ---------------------------------------------------------------
 WriteVal PROC
+    LOCAL   outString[12]: BYTE, inString[12]: BYTE, isNegative: BYTE
+    PUSH    EDI                                 ; save registers
+    PUSH    ESI
+    PUSH    EAX
+    PUSH    EBX
+    PUSH    ECX
+    PUSH    EDX
+
+    ; move local strings and input value into registers
+    LEA     ESI, outString
+    LEA     EDI, inString
+    MOV     EBX, [EBP + 2*4]
+    MOV     isNegative, 0                       ; defaults to 0 (positive)
+
+    ; save the addresses of the start of the strings
+    PUSH    ESI
+    PUSH    EDI
+
+    ; fill local strings with zeros
+    MOV     ECX, 12
+    MOV     AL, 0
+_fillZeros:
+    MOV     [ESI], AL
+    CLD
+    MOVSB
+    LOOP    _fillZeros
+
+    ; restore the addresses of the start of the strings
+    POP     EDI
+    POP     ESI
+
+    ; initialize loop counter and determine next step based
+    ; on sign of input value
+    MOV     ECX, 0
+    CMP     EAX, 0
+    JL      _processSign
+    JMP     _checkValue
+
+; place negative sign at beginning of both strings
+_processSign:
+    MOV     isNegative, 1
+    MOV     AL, '-'
+    MOV     [ESI], AL
+    CLD
+    MOVSB
+
+; break out of loop if remaining value is zero and not
+; first iteration
+_checkValue:
+    CMP     EBX, 0
+    JNE     _processValue
+    CMP     ECX, 0
+    JE      _processValue
+    JMP     _endLoop
+
+; process remaining value into characters
+_processValue:
+    CDQ
+    MOV     EAX, EBX
+    MOV     EBX, 10
+    IDIV    EBX
+    MOV     EBX, EAX
+    MOV     EAX, EDX
     
-    
-    RET
+    CMP     ECX, 0                      ; (counter == 0) and (number < 0)
+    JNE     _storeCharacter
+    CMP     isNegative, 1
+    JNE     _storeCharacter
+    NEG     EBX                             ; negate after processing one
+    NEG     EAX                             ; digit so remaining calculations
+                                            ; do not result in a negative value
+; determine ascii value and store
+_storeCharacter:
+    ADD     EAX, '0'
+    CLD
+    STOSB
+    INC     ECX
+    JMP     _checkValue
+
+; swap source and destination so that reversed string can be
+; copied into string now in destination register; save address of
+; beginning of string
+_endLoop:
+    XCHG    EDI, ESI
+    DEC     ESI
+    PUSH    EDI
+
+; copy reversed value into EDI in correct order
+_reverseString:
+    STD
+    LODSB
+    CLD
+    STOSB
+    LOOP   _reverseString
+
+    ; restore address of beginning of string; decrement address
+    ; to include minus character for negative values
+    POP     EDI
+    CMP     isNegative, 1
+    JNE     _printString
+    DEC     EDI
+
+_printString:
+    mDisplayString EDI
+
+    POP     EDX                                 ; restore registers
+    POP     ECX
+    POP     EBX
+    POP     EAX
+    POP     ESI
+    POP     EDI
+    RET     4
 WriteVal ENDP
 
 
@@ -324,7 +434,7 @@ _fillArray:
     PUSH    EBX
     CALL    ReadVal
     
-    MOV     EAX, EBX
+    MOV     EAX, number
     STOSD                           ; place value from user in array
  ;   MOV     [EDI], EAX              
  ;   ADD     EDI, 4                  ; TYPE of array 
@@ -396,7 +506,7 @@ _endLoop:
     
     POP     ESI                     ; restore registers 
     POP     EDX
-    POP     ECX                     
+    POP     ECX
     POP     EAX
     RET     6*4
 displayResults ENDP
