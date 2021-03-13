@@ -76,8 +76,9 @@ MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
 
 .data
     userInput   BYTE    STR_LEN DUP(0)
-    intro1      BYTE    "Project 6: Designing low-level I/O procedures by Rebecca Mckeever",13,10,13,10,0
-    intro2      BYTE    "Please enter 10 signed decimal integers.",13,10,
+    intro1      BYTE    "Project 6: Designing low-level I/O procedures by Rebecca Mckeever",
+                        13,10,13,10,"Please enter ",0
+    intro2      BYTE    " signed decimal integers.",13,10,
                         "Each number must be small enough to fit in a 32 bit register. After you input the ",13,10,
                         "numbers, I will display the numbers entered, their sum, and the average.",13,10,13,10,0
     prompt      BYTE    "Please enter a signed number: ",0
@@ -87,13 +88,16 @@ MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
     aveLabel    BYTE    13,10,"The rounded average is: ",0
     goodbye     BYTE    13,10,"Goodbye, thanks for playing!",13,10,0
     commaSp     BYTE    ", ",0
- ;   number      SDWORD  0
     numberArr   SDWORD  NUM_COUNT DUP(?)
-  ;  sum         SDWORD  ?
-  ;  average     SDWORD  ?
-    
+
 .code
 main PROC
+    ; set up framing and call intro
+    PUSH    OFFSET intro1
+    PUSH    OFFSET intro2
+    PUSH    NUM_COUNT
+    CALL    intro
+
     ; set up framing and call getIntegers to get 10 integers from user
     PUSH    NUM_COUNT
     PUSH    MIN_VAL
@@ -119,6 +123,43 @@ main PROC
     
     Invoke ExitProcess,0    ; exit to operating system
 main ENDP
+
+
+; ---------------------------------------------------------------
+; Name: intro
+;
+; This procedure displays the program title and the name of the author,
+; then it displays instructions and a description of the program to the user.
+;
+; Preconditions: The numerical value input must be DWORD.
+;
+; Postconditions: None
+;
+; Receives:
+;       [EBP + 4*4] = address of first string to display
+;       [EBP + 3*4] = address of second string to display
+;       [EBP + 2*4] = numerical value to place between the two strings
+;
+; Returns: None
+; ---------------------------------------------------------------
+intro PROC
+    PUSH    EBP                             ; save registers
+    MOV     EBP, ESP
+
+    ; display first string
+    mDisplayString [EBP + 4*4]
+
+    ; display numerical value
+    PUSH    [EBP + 2*4]
+    CALL    WriteVal
+
+    ; display second string
+    mDisplayString [EBP + 3*4]
+
+    MOV     ESP, EBP                        ; restore registers
+    POP     EBP
+    RET 3*4
+intro ENDP
 
 
 ; ---------------------------------------------------------------
