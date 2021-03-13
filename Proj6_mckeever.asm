@@ -86,7 +86,7 @@ MAX_VAL = 7FFFFFFFh             ; 2^31 - 1
     numsLabel   BYTE    13,10,"You entered the following numbers: ",13,10,0
     sumLabel    BYTE    13,10,"The sum of these numbers is: ",0
     aveLabel    BYTE    13,10,"The rounded average is: ",0
-    goodbye     BYTE    13,10,"Goodbye, thanks for playing!",13,10,0
+    goodbye     BYTE    13,10,13,10,"Goodbye, thanks for playing!",13,10,0
     commaSp     BYTE    ", ",0
     numberArr   SDWORD  NUM_COUNT DUP(?)
 
@@ -98,7 +98,7 @@ main PROC
     PUSH    NUM_COUNT
     CALL    intro
 
-    ; set up framing and call getIntegers to get 10 integers from user
+    ; set up framing and call getIntegers to get integers from user
     PUSH    NUM_COUNT
     PUSH    MIN_VAL
     PUSH    MAX_VAL
@@ -118,8 +118,9 @@ main PROC
     PUSH    OFFSET numberArr
     CALL    displayResults
 
-    ; set up framing and call WriteVal
-    ;CALL    WriteVal
+    ; set up framing and call showGoodbye
+    PUSH    OFFSET goodbye
+    CALL    showGoodbye
     
     Invoke ExitProcess,0    ; exit to operating system
 main ENDP
@@ -587,6 +588,32 @@ _displayAverage:
     POP     EAX
     RET     6*4
 displayResults ENDP
+
+
+; ---------------------------------------------------------------
+; Name: showGoodbye
+;
+; This procedure displays a goodbye message for the user.
+;
+; Preconditions: None
+;
+; Postconditions: None
+;
+; Receives:
+;       [EBP + 2*4] = address of string to display
+;
+; Returns: None
+; ---------------------------------------------------------------
+showGoodbye PROC
+    PUSH    EBP                             ; save registers
+    MOV     EBP, ESP
+
+    mDisplayString [EBP + 2*4]              ; display string
+
+    MOV     ESP, EBP                        ; restore registers
+    POP     EBP
+    RET     4
+showGoodbye ENDP
 
 
 END main
