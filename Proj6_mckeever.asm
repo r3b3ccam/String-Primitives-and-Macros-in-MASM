@@ -77,8 +77,9 @@ STR_LEN = 100                   ; includes extra bytes to account for user enter
     intro1      BYTE    "Project 6: Designing low-level I/O procedures by Rebecca Mckeever",
                         13,10,13,10,"Please enter ",0
     intro2      BYTE    " signed decimal integers.",13,10,
-                        "Each number must be small enough to fit in a 32 bit register. After you input the ",13,10,
-                        "numbers, I will display the numbers entered, their sum, and the average.",13,10,13,10,0
+                        "Each number must be small enough to fit in a 32 bit register. After ",13,10,
+                        "you input the numbers, I will display the numbers entered, their sum, ",
+                        13,10,"and the average.",13,10,13,10,0
     prompt      BYTE    "Please enter a signed number: ",0
     errorMsg    BYTE    "ERROR: You did not enter a signed number, or your number was too big. Please try again.",13,10,0
     numsLabel   BYTE    13,10,"You entered the following numbers: ",13,10,0
