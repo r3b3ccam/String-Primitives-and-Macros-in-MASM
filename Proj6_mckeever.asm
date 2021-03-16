@@ -27,7 +27,7 @@ INCLUDE Irvine32.inc
 ; Name: mGetString
 ;
 ; This macro displays a prompt to the user and then read's the
-; user's input into a memory variable.
+; user's input into a memory variable. Uses EAX, ECX, and EDX.
 ;
 ; Preconditions: promptStr and buffer are references.
 ;                bufferSize and numChars are DWORD or immediate.
@@ -66,7 +66,7 @@ ENDM
 ; ---------------------------------------------------------------
 ; Name: mDisplayString
 ;
-; This macro prints a string stored in a memory location.
+; This macro prints a string stored in a memory location. Uses EDX.
 ;
 ; Preconditions: inString is a reference.
 ;
