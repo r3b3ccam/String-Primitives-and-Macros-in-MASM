@@ -74,7 +74,7 @@ ENDM
 
 ; (insert constant definitions here)
 NUM_COUNT = 2
-STR_LEN = 100                   ; includes extra bytes to account for user entering multiple leading 0's
+STR_LEN = 100       ; includes extra bytes to account for user entering multiple leading 0's
 
 .data
     userInput   BYTE    STR_LEN DUP(0)
@@ -133,9 +133,9 @@ main ENDP
 ; This procedure displays the program title and the name of the author,
 ; then it displays instructions and a description of the program to the user.
 ;
-; Preconditions: The numerical value input must be DWORD.
+; Preconditions: None
 ;
-; Postconditions: None
+; Postconditions: This strings and numeric value are printed to output.
 ;
 ; Receives:
 ;       [EBP + 4*4] = address of first string to display
@@ -167,11 +167,16 @@ intro ENDP
 ; ---------------------------------------------------------------
 ; Name: ReadVal
 ; 
+; This procedure reads a numerical value entered by the user
+; using the mGetString macro. It converts the string of ascii
+; characters into its numerical value. It validates that the number
+; is a valid SDWORD value, with no non-numeric characters other than
+; a sign at the beginning. If the number is invalid, it discards the
+; value, displays an error message, and reprompts.
 ; 
+; Preconditions: The variable to hold the numerical value must be SDWORD.
 ; 
-; Preconditions: 
-; 
-; Postconditions: 
+; Postconditions: None
 ; 
 ; Receives:
 ;       [EBP + 6*4] = the address of a string prompt
@@ -181,10 +186,12 @@ intro ENDP
 ;       [EBP + 2*4] = the address of an SDWORD
 ;
 ; Returns: 
+;       [EBP + 4*4] = the numerical value entered as a string
+;       [EBP + 2*4] = the numerical value entered as an SDWORD
 ; ---------------------------------------------------------------
 ReadVal PROC
     LOCAL   byteCount: DWORD, curChar: DWORD, isNegative: BYTE
-    PUSH    EAX                                 ; save registers
+    PUSH    EAX                             ; save registers
     PUSH    EBX
     PUSH    ECX
     PUSH    EDX
@@ -244,7 +251,7 @@ _charLoop:
     ; get next character of input string into curChar
     CLD
     LODSB
-    MOVZX   EAX, AL                           ; clear upper bits of EAX
+    MOVZX   EAX, AL                         ; clear upper bits of EAX
     MOV     curChar, EAX
     JMP _checkNumerals
 
@@ -297,7 +304,7 @@ _invalid:
     JMP     _getInput
 
 _end:
-    POP     ESI                                 ; restore registers
+    POP     ESI                             ; restore registers
     POP     EDI
     POP     EDX
     POP     ECX
@@ -310,16 +317,18 @@ ReadVal ENDP
 ; ---------------------------------------------------------------
 ; Name: WriteVal
 ; 
+; This procedure converts a numerical value to a string of ascii
+; characters. It uses the mDisplayString macro to print the ascii
+; characters.
 ; 
+; Preconditions: The input must contain an SDWORD value.
 ; 
-; Preconditions: 
-; 
-; Postconditions: 
+; Postconditions: The string of ascii characters is printed to output.
 ; 
 ; Receives: 
 ;       [EBP + 2*4] = the value of an SDWORD
 ;
-; Returns: 
+; Returns: None
 ; ---------------------------------------------------------------
 WriteVal PROC
     LOCAL   outString[12]: BYTE, inString[12]: BYTE, isNegative: BYTE
@@ -613,7 +622,7 @@ displayResults ENDP
 ;
 ; Preconditions: None
 ;
-; Postconditions: None
+; Postconditions: This string is printed to output.
 ;
 ; Receives:
 ;       [EBP + 2*4] = address of string to display
