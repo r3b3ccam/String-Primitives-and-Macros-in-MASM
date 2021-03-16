@@ -1,7 +1,7 @@
 TITLE Project 6 - String Primitives and Macros     (Proj6_mckeever.asm)
 
 ; Author: Rebecca Mckeever
-; Last Modified: 03/13/2021
+; Last Modified: 03/16/2021
 ; OSU email address: mckeever@oregonstate.edu
 ; Course number/section:   CS271 Section 400
 ; Project Number: 6                Due Date: 03/16/2021
@@ -323,7 +323,7 @@ _fillZeros:
     ; initialize loop counter and determine next step based
     ; on sign of input value
     MOV     ECX, 0
-    CMP     EAX, 0
+    CMP     EBX, 0
     JL      _processSign
     JMP     _checkValue
 
@@ -335,8 +335,20 @@ _processSign:
     CLD
     MOVSB
 
-; break out of loop if remaining value is zero and not
-; first iteration
+    ; process left-most digit into a character
+    MOV     EAX, EBX
+    MOV     EBX, 10
+    CDQ
+    IDIV    EBX
+    MOV     EBX, EAX
+    MOV     EAX, EDX
+    NEG     EBX                             ; negate after processing one
+    NEG     EAX                             ; digit so remaining calculations
+                                            ; do not result in a negative value
+    JMP     _storeCharacter
+
+; break out of loop if remaining value is zero
+; and not first iteration
 _checkValue:
     CMP     EBX, 0
     JNE     _processValue
@@ -346,20 +358,13 @@ _checkValue:
 
 ; process remaining value into characters
 _processValue:
-    CDQ
+    MOV     EDX, 0
     MOV     EAX, EBX
     MOV     EBX, 10
-    IDIV    EBX
+    DIV     EBX
     MOV     EBX, EAX
     MOV     EAX, EDX
-    
-    CMP     ECX, 0                      ; (counter == 0) and (number < 0)
-    JNE     _storeCharacter
-    CMP     isNegative, 1
-    JNE     _storeCharacter
-    NEG     EBX                             ; negate after processing one
-    NEG     EAX                             ; digit so remaining calculations
-                                            ; do not result in a negative value
+
 ; determine ascii value and store
 _storeCharacter:
     ADD     EAX, '0'
@@ -481,8 +486,7 @@ getIntegers ENDP
 ; Returns: 
 ; ---------------------------------------------------------------
 displayResults PROC
-    PUSH    EBP                             ; save registers
-    MOV     EBP, ESP
+    LOCAL   sum: SDWORD
     PUSH    EAX
     PUSH    EBX
     PUSH    ECX
@@ -490,7 +494,7 @@ displayResults PROC
     PUSH    ESI
     
     ; initialize sum (EBX), loop counter, and array pointer
-    MOV     EBX, 0
+    MOV     sum, 0
     MOV     ECX, [EBP + 3*4]
     MOV     ESI, [EBP + 2*4]
 
@@ -502,7 +506,7 @@ displayResults PROC
 _processArray:
     CLD
     LODSD
-    ADD     EBX, EAX                ; add current value to sum
+    ADD     sum, EAX                ; add current value to sum
 
     ; call WriteVal to display value within list
     PUSH    EAX
@@ -515,14 +519,14 @@ _endLoop:
 
     ; display label for sum and call WriteVal to display sum
     mDisplayString [EBP + 5*4]
-    PUSH    EBX
+    PUSH    sum
     CALL    WriteVal
 
     ; display label for average
     mDisplayString [EBP + 4*4]
 
     ; calculate and display rounded average
-    MOV     EAX, EBX
+    MOV     EAX, sum
     MOV     EBX, [EBP + 3*4]
     CDQ
     IDIV    EBX
@@ -536,7 +540,7 @@ _endLoop:
 _negative:
     NEG     EDX
     CMP     EDX, EBX
-    JGE     _roundDown
+    JG      _roundDown
     JMP     _displayAverage
 
 _roundDown:
@@ -561,8 +565,6 @@ _displayAverage:
     POP     ECX
     POP     EBX
     POP     EAX
-    MOV     ESP, EBP
-    POP     EBP
     RET     6*4
 displayResults ENDP
 
