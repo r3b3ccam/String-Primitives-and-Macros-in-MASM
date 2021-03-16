@@ -9,19 +9,25 @@ TITLE Project 6 - String Primitives and Macros     (Proj6_mckeever.asm)
 
 INCLUDE Irvine32.inc
 
+
 ; ---------------------------------------------------------------
 ; Name: mGetString
 ;
-; 
+; This macro displays a prompt to the user and then read's the
+; user's input into a memory variable.
 ;
-; Preconditions: 
+; Preconditions: promptStr and buffer must be references.
+;                bufferSize and numChars must be DWORD or immediate.
 ;
 ; Receives:
+;       promptStr   = address of a string prompt
+;       buffer      = address of a string to hold user input
+;       bufferSize  = size of string for user input in bytes
+;       numChars    = variable to hold number of characters read
 ; 
-; 
-; 
-;
-; returns: 
+; returns:
+;       buffer      = string entered by user
+;       numChars    = number of characters read
 ; ---------------------------------------------------------------
 mGetString MACRO     promptStr:REQ, buffer:REQ, bufferSize:REQ, numChars:REQ
     PUSH    EAX                             ; save registers
@@ -47,16 +53,14 @@ ENDM
 ; ---------------------------------------------------------------
 ; Name: mDisplayString
 ;
-; 
+; This macro prints a string stored in a memory location.
 ;
-; Preconditions: 
+; Preconditions: inString must be a reference.
 ;
 ; Receives:
-; 
-; 
-; 
+;       inString = address of a string to display
 ;
-; returns: 
+; returns: None
 ; ---------------------------------------------------------------
 mDisplayString MACRO inString:REQ
     PUSH    EDX                             ; save register
@@ -196,7 +200,9 @@ ReadVal PROC
 ; validation loop for user input
 _getInput:
     MOV     isNegative, 0                   ; initialize to "false" (positive)
+
     ; call mGetString to get user input
+    ;           prompt, buffer, buffer size, number of chars
     mGetString [EBP + 6*4], ESI, [EBP + 3*4], byteCount
 
     ; Move number of characters read to loop counter.
