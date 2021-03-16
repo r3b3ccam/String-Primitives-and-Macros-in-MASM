@@ -16,8 +16,8 @@ INCLUDE Irvine32.inc
 ; This macro displays a prompt to the user and then read's the
 ; user's input into a memory variable.
 ;
-; Preconditions: promptStr and buffer must be references.
-;                bufferSize and numChars must be DWORD or immediate.
+; Preconditions: promptStr and buffer are references.
+;                bufferSize and numChars are DWORD or immediate.
 ;
 ; Receives:
 ;       promptStr   = address of a string prompt
@@ -55,7 +55,7 @@ ENDM
 ;
 ; This macro prints a string stored in a memory location.
 ;
-; Preconditions: inString must be a reference.
+; Preconditions: inString is a reference.
 ;
 ; Receives:
 ;       inString = address of a string to display
@@ -73,7 +73,7 @@ ENDM
 
 
 ; (insert constant definitions here)
-NUM_COUNT = 2
+NUM_COUNT = 10
 STR_LEN = 100       ; includes extra bytes to account for user entering multiple leading 0's
 
 .data
@@ -174,7 +174,7 @@ intro ENDP
 ; a sign at the beginning. If the number is invalid, it discards the
 ; value, displays an error message, and reprompts.
 ; 
-; Preconditions: The variable to hold the numerical value must be SDWORD.
+; Preconditions: The variable to hold the numerical value is SDWORD.
 ; 
 ; Postconditions: None
 ; 
@@ -321,7 +321,7 @@ ReadVal ENDP
 ; characters. It uses the mDisplayString macro to print the ascii
 ; characters.
 ; 
-; Preconditions: The input must contain an SDWORD value.
+; Preconditions: The input contains an SDWORD value.
 ; 
 ; Postconditions: The string of ascii characters is printed to output.
 ; 
@@ -457,11 +457,12 @@ WriteVal ENDP
 ; ---------------------------------------------------------------
 ; Name: getIntegers
 ; 
+; This procedure uses ReadVal to get a specified number of integers
+; from the user and stores the integers in an array.
 ; 
+; Preconditions: The array is type SDWORD.
 ; 
-; Preconditions: 
-; 
-; Postconditions: 
+; Postconditions: None
 ; 
 ; Receives: 
 ;       [EBP + 7*4] = number of values to get from user
@@ -471,7 +472,7 @@ WriteVal ENDP
 ;       [EBP + 3*4] = size of the string that holds user input
 ;       [EBP + 2*4] = the address of an array of SDWORDs
 ;
-; Returns: 
+; Returns: [EBP + 2*4] = the array filled with values
 ; ---------------------------------------------------------------
 getIntegers PROC
     PUSH    EBP                             ; save registers
