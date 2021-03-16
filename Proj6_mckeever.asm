@@ -5,7 +5,20 @@ TITLE Project 6 - String Primitives and Macros     (Proj6_mckeever.asm)
 ; OSU email address: mckeever@oregonstate.edu
 ; Course number/section:   CS271 Section 400
 ; Project Number: 6                Due Date: 03/16/2021
-; Description: ***
+; Description: This program includes macros mGetString to display a
+; prompt and get a string from the user and mDisplayString to display
+; a string. The ReadVal procedure uses mGetString to convert a value
+; entered by the user from a string of ascii characters to its signed
+; numerical value and validates that it is a valid SDWORD. The WriteVal
+; procedure converts an SDWORD numerical value to a string of ascii
+; characters and displays it with mDisplayString.
+;
+; In main, the intro procedure displays the program title, name of the author,
+; and instructions for the users and then calls procedures getIntegers
+; and displayResults to test ReadVal and WriteVal. getIntegers calls ReadVal
+; to get 10 integers from the users and stores them in an array. Then,
+; displayResults displays the list of integers, their sum, and their rounded
+; average. Finally, the showGoodbye procedure displays a parting message.
 
 INCLUDE Irvine32.inc
 
@@ -271,7 +284,7 @@ _checkNumerals:
     ; calculate the value of this character
     SUB     curChar, '0'
 
-    ; if user entered a negative number, negate the value
+    ; if user entered a negative number, negate the value of current character
     CMP     isNegative, 1
     JNE     _continue
     MOV     EAX, -1
