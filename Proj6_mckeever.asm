@@ -187,58 +187,78 @@ ReadVal PROC
     PUSH    EDI
     PUSH    ESI
 
+    ; move addresses for the numerical value and the string to EDI/ESI
     MOV     EDI, [EBP + 2*4]
     MOV     ESI, [EBP + 4*4]
     MOV     EBX, 0
-    MOV     [EDI], EBX
+    MOV     [EDI], EBX                      ; initialize numerical value to 0
+
+; validation loop for user input
 _getInput:
-    MOV     isNegative, 0
+    MOV     isNegative, 0                   ; initialize to "false" (positive)
     ; call mGetString to get user input
     mGetString [EBP + 6*4], ESI, [EBP + 3*4], byteCount
 
+    ; Move number of characters read to loop counter.
+    ; Then, display error and reprompt if no characters entered.
     MOV     ECX, byteCount
     CMP     ECX, 0
     JE      _invalid
 
-    ; get first character of input string to check for possible sign
+    ; get first character of input string into curChar
     CLD
     LODSB
-    MOVZX   EAX, AL
+    MOVZX   EAX, AL                         ; clear upper bits of EAX
     MOV     curChar, EAX
 
+    ; check first character for possible sign
     CMP     curChar, '+'
     JE      _checkLength
     CMP     curChar, '-'
     JE      _checkLength
+
+    ; if no sign, process this first character as a numeral
     JMP     _checkNumerals
 
+; ensure that if a sign was entered,
+; other characters were entered after it
 _checkLength:
     CMP     ECX, 1
     JLE     _invalid
 
+    ; if the sign is negative, set isNegative to true
+    ; for either sign, skip to end of loop before reading next character
     CMP     curChar, '-'
     JNE     _endLoop
     MOV     isNegative, 1
     JMP     _endLoop
 
+; loop to process each character of input string
 _charLoop:
+    ; get next character of input string into curChar
     CLD
     LODSB
-    MOVZX   EAX, AL
+    MOVZX   EAX, AL                           ; clear upper bits of EAX
     MOV     curChar, EAX
     JMP _checkNumerals
 
+; repeat loop if more characters to process
 _endLoop:
     LOOP    _charLoop
     JMP     _end
 
+; process current character as a numeral
 _checkNumerals:
+    ; ensure that this character is a valid numeral
     CMP     curChar, '9'
     JG      _invalid
     CMP     curChar, '0'
     JL      _invalid
 
+    ; calculate the value of this character
     SUB     curChar, '0'
+
+    ; if user entered a negative number, negate the value
     CMP     isNegative, 1
     JNE     _continue
     MOV     EAX, -1
@@ -246,10 +266,15 @@ _checkNumerals:
     IMUL    EAX, curChar
     MOV     curChar, EAX
 
+; multiply current value accumulated by 10 and
+; add value of current character
 _continue:
-    MOV     EAX, [EDI]
+    MOV     EAX, [EDI]                      ; get value accumulated so far
     MOV     EBX, 10
     MOV     EDX, 0
+
+    ; mark input as invalid and reprompt
+    ; if either of the following operations results in overflow
     IMUL    EBX
     JO      _invalid
     ADD     EAX, curChar
@@ -257,6 +282,8 @@ _continue:
     MOV     [EDI], EAX
     JMP     _endLoop
 
+; if input was invalid, clear the value accumulated in EDI,
+; display error message, and reprompt
 _invalid:
     MOV     EBX, 0
     MOV     [EDI], EBX
@@ -307,7 +334,7 @@ WriteVal PROC
     PUSH    ESI
     PUSH    EDI
 
-    ; fill local strings with zeros
+    ; fill both local strings with zeros
     MOV     ECX, 12
     MOV     AL, 0
 _fillZeros:
@@ -327,7 +354,7 @@ _fillZeros:
     JL      _processSign
     JMP     _checkValue
 
-; place negative sign at beginning of both strings
+; if value is negative, place negative sign at beginning of both strings
 _processSign:
     MOV     isNegative, 1
     MOV     AL, '-'
@@ -361,6 +388,9 @@ _processValue:
     MOV     EDX, 0
     MOV     EAX, EBX
     MOV     EBX, 10
+
+    ; Divide by 10 to get value of last digit as the remainder.
+    ; Store the result of the division in a register.
     DIV     EBX
     MOV     EBX, EAX
     MOV     EAX, EDX
@@ -375,7 +405,7 @@ _storeCharacter:
 
 ; swap source and destination so that reversed string can be
 ; copied into string now in destination register; save address of
-; beginning of string
+; beginning of output string.
 _endLoop:
     XCHG    EDI, ESI
     DEC     ESI
@@ -389,8 +419,8 @@ _reverseString:
     STOSB
     LOOP   _reverseString
 
-    ; restore address of beginning of string; decrement address
-    ; to include minus character for negative values
+    ; restore address of beginning of output string; decrement address
+    ; for negative values to include minus character
     POP     EDI
     CMP     isNegative, 1
     JNE     _printString
@@ -440,13 +470,14 @@ getIntegers PROC
     MOV     EDI, [EBP + 2*4]
     MOV     ECX, [EBP + 7*4]
 
+; fill array with integers entered by user
 _fillArray:
     ; set up framing and call ReadVal to get an integer from user
     PUSH    [EBP + 6*4]
     PUSH    [EBP + 5*4]
     PUSH    [EBP + 4*4]
     PUSH    [EBP + 3*4]
-    PUSH    EBX
+    PUSH    EBX                             ; numerical value output by ReadVal
     CALL    ReadVal
     
     ; place value from user in array using DWORD primitives
