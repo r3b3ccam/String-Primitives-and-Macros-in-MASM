@@ -74,7 +74,7 @@ ENDM
 
 ; (insert constant definitions here)
 NUM_COUNT = 10
-STR_LEN = 100       ; includes extra bytes to account for user entering multiple leading 0's
+STR_LEN = 50       ; includes extra bytes to account for user entering multiple leading 0's
 
 .data
     userInput   BYTE    STR_LEN DUP(0)
@@ -422,8 +422,14 @@ _storeCharacter:
 ; copied into string now in destination register; save address of
 ; beginning of output string.
 _endLoop:
+    ; null terminate string
+    MOV     AL, 0
+    CLD
+    STOSB
+    SUB     EDI, 2                          ; point to last non-null character written
+
+    ; swap source and destination
     XCHG    EDI, ESI
-    DEC     ESI
     PUSH    EDI
 
 ; copy reversed value into EDI in correct order
@@ -433,6 +439,11 @@ _reverseString:
     CLD
     STOSB
     LOOP   _reverseString
+
+    ; null terminate string
+    MOV     AL, 0
+    CLD
+    STOSB
 
     ; restore address of beginning of output string; decrement address
     ; for negative values to include minus character
