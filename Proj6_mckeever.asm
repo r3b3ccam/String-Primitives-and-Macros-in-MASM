@@ -526,11 +526,12 @@ getIntegers ENDP
 ; ---------------------------------------------------------------
 ; Name: displayResults
 ; 
+; This procedure displays the values in the given array, their sum,
+; and their average, with string labels.
 ; 
+; Preconditions: The array is filled with SDWORD values.
 ; 
-; Preconditions: 
-; 
-; Postconditions: 
+; Postconditions: The values and string labels are printed to output.
 ; 
 ; Receives: 
 ;       [EBP + 7*4] = the address of a string delimiter to display 
@@ -538,10 +539,10 @@ getIntegers ENDP
 ;       [EBP + 6*4] = the address of a string label for the list of numbers
 ;       [EBP + 5*4] = the address of a string label for the sum
 ;       [EBP + 4*4] = the address of a string label for the average
-;       [EBP + 3*4] = number of values received from user
+;       [EBP + 3*4] = number of values in the array
 ;       [EBP + 2*4] = the address of an array of SDWORDs
 ;
-; Returns: 
+; Returns: None
 ; ---------------------------------------------------------------
 displayResults PROC
     LOCAL   sum: SDWORD
