@@ -26,7 +26,7 @@ INCLUDE Irvine32.inc
 ; ---------------------------------------------------------------
 ; Name: mGetString
 ;
-; This macro displays a prompt to the user and then read's the
+; This macro displays a prompt to the user and then reads the
 ; user's input into a memory variable. Uses EAX, ECX, and EDX.
 ;
 ; Preconditions: promptStr and buffer are references.
@@ -345,12 +345,12 @@ ReadVal ENDP
 ; ---------------------------------------------------------------
 WriteVal PROC
     LOCAL   outString[12]: BYTE, inString[12]: BYTE, isNegative: BYTE
-    PUSH    EDI                                 ; save registers
-    PUSH    ESI
-    PUSH    EAX
+    PUSH    EAX                             ; save registers
     PUSH    EBX
     PUSH    ECX
     PUSH    EDX
+    PUSH    EDI
+    PUSH    ESI
 
     ; move local strings and input value into registers
     LEA     ESI, outString
@@ -468,12 +468,12 @@ _reverseString:
 _printString:
     mDisplayString EDI
 
-    POP     EDX                                 ; restore registers
+    POP     ESI                             ; restore registers
+    POP     EDI
+    POP     EDX
     POP     ECX
     POP     EBX
     POP     EAX
-    POP     ESI
-    POP     EDI
     RET     4
 WriteVal ENDP
 
@@ -573,7 +573,7 @@ displayResults PROC
     ; display label for list of numbers
     mDisplayString [EBP + 6*4]
 
-; step through array of numbers with DWORD primitives; for each value,
+; step through array of numbers; for each value,
 ; add to sum and display it
 _processArray:
     MOV     EAX, [ESI]
