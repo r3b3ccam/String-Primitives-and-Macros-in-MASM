@@ -105,7 +105,9 @@ STR_LEN = 50       ; includes extra bytes to account for user entering multiple 
     goodbye     BYTE    13,10,13,10,"Goodbye, thanks for playing!",13,10,0
     commaSp     BYTE    ", ",0
     numberArr   SDWORD  NUM_COUNT DUP(?)
-    number      REAL4   ?
+    floatArr    REAL4  NUM_COUNT DUP(?)
+    floatVal    REAL4  ?
+    number      SDWORD  ?
     exCredit2   BYTE    "**EC: This program implements ReadFloatVal and WriteFloatVal ",
                         13,10,"procedures to process floating point values on the FPU.",
                         13,10,13,10,0
@@ -142,8 +144,12 @@ main PROC
     PUSH    OFFSET errorMsg
     PUSH    OFFSET userInput
     PUSH    SIZEOF userInput
-    PUSH    OFFSET number
+    PUSH    OFFSET floatVal
     CALL    ReadFloatVal
+
+    ; set up framing and call WriteFloatVal
+    PUSH    floatVal
+    CALL    WriteFloatVal
 
     ; set up framing and call showGoodbye
     PUSH    OFFSET goodbye
@@ -191,7 +197,7 @@ intro PROC
 
     MOV     ESP, EBP                        ; restore registers
     POP     EBP
-    RET 4*4
+    RET     4*4
 intro ENDP
 
 
@@ -736,10 +742,13 @@ _getFloatInput:
     mGetString [EBP + 6*4], ESI, [EBP + 3*4], byteCount
 
     ; Move number of characters read to loop counter.
-    ; Then, display error and reprompt if no characters entered.
+    ; Then, display error and reprompt if no characters entered
+    ; or too many characters were entered to have a null terminator
     MOV     ECX, byteCount
     CMP     ECX, 0
     JE      _floatInvalid
+    CMP     ECX, [EBP + 3*4]
+    JGE     _floatInvalid
 
     ; get first character of input string into curChar
     CLD
@@ -823,7 +832,7 @@ _fracOperations:
 _negate:
     CMP     isNegative, 1
     JNE     _floatContinue
-    FCHS
+    FABS
 
 ; add value of current character
 _floatContinue:
@@ -853,6 +862,104 @@ _floatEnd:
     POP     EAX
     RET     5*4
 ReadFloatVal ENDP
+
+
+; ---------------------------------------------------------------
+; Name: WriteFloatVal
+;
+;
+;
+; Preconditions:
+;
+; Postconditions:
+;
+; Receives:
+;
+; Returns:
+; ---------------------------------------------------------------
+WriteFloatVal PROC
+    LOCAL   outString[STR_LEN]: BYTE, inString[STR_LEN]: BYTE, isNegative: BYTE, immVal: SDWORD, inVal: REAL4, tempVal: SDWORD
+    PUSH    EDI                                 ; save registers
+    PUSH    ESI
+    PUSH    EAX
+    PUSH    EBX
+    PUSH    ECX
+    PUSH    EDX
+
+    FINIT                                   ; Initialize FPU stack
+
+
+    ; move local strings and input value into registers
+    LEA     ESI, outString
+    LEA     EDI, inString
+  ;  MOV     EBX, [EBP + 2*4]
+ ;   MOV     inVal, EBX
+    FLD     REAL4 PTR [EBP + 2*4]
+    MOV     isNegative, 0                       ; defaults to 0 (positive)
+
+    ; save the addresses of the start of the strings
+    PUSH    ESI
+    PUSH    EDI
+
+    ; fill both local strings with zeros
+    MOV     ECX, STR_LEN
+    MOV     AL, 0
+_fillZeros:
+    MOV     [ESI], AL
+    CLD
+    MOVSB
+    LOOP    _fillZeros
+
+    ; restore the addresses of the start of the strings
+    POP     EDI
+    POP     ESI
+
+    ; initialize loop counter and determine next step based
+    ; on sign of input value
+    MOV     ECX, 0
+
+
+    ; Reference: https://www.website.masmforum.com/tutorials/fptute/fpuchap7.htm#ftst
+    FTST                        ;compare the value of ST(0) to +0.0
+    FSTSW AX                    ;copy the Status Word containing the result to AX
+    FWAIT                       ;insure the previous instruction is completed
+    SAHF                        ;transfer the condition codes to the CPU's flag register
+    JB _negativeFloat           ;
+    JMP _checkFloatValue
+
+; if value is negative, place negative sign at beginning of both strings
+_negativeFloat:
+    MOV     isNegative, 1
+    MOV     AL, '-'
+    MOV     [ESI], AL
+    CLD
+    MOVSB
+    FABS                                        ; make value positive
+
+
+
+    CALL    WriteFloat
+
+_checkFloatValue:
+    ; save the addresses of the start of the strings
+    PUSH    ESI
+    PUSH    EDI
+
+    FLD ST(0)
+    ;FISTTP
+
+    FSTCW   EBX
+    FWAIT
+ ;   MOV     AX,
+
+    POP     EDX                                 ; restore registers
+    POP     ECX
+    POP     EBX
+    POP     EAX
+    POP     ESI
+    POP     EDI
+    RET     4
+WriteFloatVal ENDP
 
 
 END main
