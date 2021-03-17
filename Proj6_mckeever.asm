@@ -86,7 +86,7 @@ ENDM
 
 
 ; (insert constant definitions here)
-NUM_COUNT = 10
+NUM_COUNT = 2
 STR_LEN = 50       ; includes extra bytes to account for user entering multiple leading 0's
 
 .data
@@ -105,10 +105,15 @@ STR_LEN = 50       ; includes extra bytes to account for user entering multiple 
     goodbye     BYTE    13,10,13,10,"Goodbye, thanks for playing!",13,10,0
     commaSp     BYTE    ", ",0
     numberArr   SDWORD  NUM_COUNT DUP(?)
+    number      REAL4   ?
+    exCredit2   BYTE    "**EC: This program implements ReadFloatVal and WriteFloatVal ",
+                        13,10,"procedures to process floating point values on the FPU.",
+                        13,10,13,10,0
 
 .code
 main PROC
     ; set up framing and call intro
+    PUSH    OFFSET exCredit2
     PUSH    OFFSET intro1
     PUSH    OFFSET intro2
     PUSH    NUM_COUNT
@@ -132,6 +137,14 @@ main PROC
     PUSH    OFFSET numberArr
     CALL    displayResults
 
+    ; set up framing and call ReadFloatVal
+    PUSH    OFFSET prompt
+    PUSH    OFFSET errorMsg
+    PUSH    OFFSET userInput
+    PUSH    SIZEOF userInput
+    PUSH    OFFSET number
+    CALL    ReadFloatVal
+
     ; set up framing and call showGoodbye
     PUSH    OFFSET goodbye
     CALL    showGoodbye
@@ -144,13 +157,15 @@ main ENDP
 ; Name: intro
 ;
 ; This procedure displays the program title and the name of the author,
-; then it displays instructions and a description of the program to the user.
+; then it displays instructions and a description of the program to the user,
+; as well as descriptions of all extra credit features attempted.
 ;
 ; Preconditions: None
 ;
 ; Postconditions: This strings and numeric value are printed to output.
 ;
 ; Receives:
+;       [EBP + 5*4] = address of third string to display
 ;       [EBP + 4*4] = address of first string to display
 ;       [EBP + 3*4] = address of second string to display
 ;       [EBP + 2*4] = numerical value to place between the two strings
@@ -171,9 +186,12 @@ intro PROC
     ; display second string
     mDisplayString [EBP + 3*4]
 
+    ; display third string
+    mDisplayString [EBP + 5*4]
+
     MOV     ESP, EBP                        ; restore registers
     POP     EBP
-    RET 3*4
+    RET 4*4
 intro ENDP
 
 
@@ -196,7 +214,7 @@ intro ENDP
 ;       [EBP + 5*4] = the address of a string error message
 ;       [EBP + 4*4] = the address of a string to hold user input
 ;       [EBP + 3*4] = size of the string that holds user input
-;       [EBP + 2*4] = the address of an SDWORD
+;       [EBP + 2*4] = the address of an SDWORD memory variable
 ;
 ; Returns: 
 ;       [EBP + 4*4] = the numerical value entered as a string
@@ -665,6 +683,176 @@ showGoodbye PROC
     POP     EBP
     RET     4
 showGoodbye ENDP
+
+
+; ---------------------------------------------------------------
+; Name: ReadFloatVal
+;
+; This procedure reads a numerical value entered by the user
+; using the mGetString macro. It converts the string of ascii
+; characters into its signed floating point numerical value. It
+; validates that the number is a valid numerical value, with no
+; non-numeric characters other than a sign at the beginning or a
+; radix point. If the number is invalid, it discards the
+; value, displays an error message, and reprompts.
+;
+; Preconditions: The variable to hold the numerical value is REAL4.
+;
+; Postconditions: None
+;
+; Receives:
+;       [EBP + 6*4] = the address of a string prompt
+;       [EBP + 5*4] = the address of a string error message
+;       [EBP + 4*4] = the address of a string to hold user input
+;       [EBP + 3*4] = size of the string that holds user input
+;       [EBP + 2*4] = the address of a REAL4 memory variable
+;
+; Returns:
+;       [EBP + 4*4] = the numerical value entered as a string
+;       [EBP + 2*4] = the numerical value entered as a REAL4
+; ---------------------------------------------------------------
+ReadFloatVal PROC
+    LOCAL   byteCount: DWORD, curChar: DWORD, isNegative: BYTE, isFrac: BYTE, immVal: SDWORD
+    PUSH    EAX                             ; save registers
+    PUSH    EBX
+    PUSH    ECX
+    PUSH    EDX
+    PUSH    EDI
+    PUSH    ESI
+
+    MOV     ESI, [EBP + 4*4]                ; move address for the string to ESI
+    FINIT                                   ; Initialize FPU stack
+
+; validation loop for user input
+_getFloatInput:
+    ; load 0 into top of FPU stack
+    MOV     immVal, 0
+    FILD    immVal
+    MOV     isNegative, 0                   ; initialize to "false" (positive)
+    MOV     isFrac, 0
+
+    ; call mGetString to get user input
+    ;           prompt, buffer, buffer size, number of chars
+    mGetString [EBP + 6*4], ESI, [EBP + 3*4], byteCount
+
+    ; Move number of characters read to loop counter.
+    ; Then, display error and reprompt if no characters entered.
+    MOV     ECX, byteCount
+    CMP     ECX, 0
+    JE      _floatInvalid
+
+    ; get first character of input string into curChar
+    CLD
+    LODSB
+    MOVZX   EAX, AL                         ; clear upper bits of EAX
+    MOV     curChar, EAX
+
+    ; check first character for possible sign
+    CMP     curChar, '+'
+    JE      _checkFloatLength
+    CMP     curChar, '-'
+    JE      _checkFloatLength
+
+    ; if no sign, process this first character as a numeral
+    JMP     _checkFloatNumerals
+
+; ensure that if a sign was entered,
+; other characters were entered after it
+_checkFloatLength:
+    CMP     ECX, 1
+    JLE     _floatInvalid
+
+    ; if the sign is negative, set isNegative to true
+    ; for either sign, skip to end of loop before reading next character
+    CMP     curChar, '-'
+    JNE     _endFloatLoop
+    MOV     isNegative, 1
+    JMP     _endFloatLoop
+
+; loop to process each character of input string
+_charFloatLoop:
+    ; get next character of input string into curChar
+    CLD
+    LODSB
+    MOVZX   EAX, AL                         ; clear upper bits of EAX
+    MOV     curChar, EAX
+    JMP _checkFloatNumerals
+
+; repeat loop if more characters to process
+_endFloatLoop:
+    LOOP    _charFloatLoop
+    JMP     _floatEnd
+
+; process current character as a numeral
+_checkFloatNumerals:
+    ; ensure that this character is a valid numeral or radix point
+    CMP     curChar, '.'
+    JE      _processFrac
+    CMP     curChar, '9'
+    JG      _floatInvalid
+    CMP     curChar, '0'
+    JL      _floatInvalid
+
+    ; calculate the value of this character
+    SUB     curChar, '0'
+
+    ; determine whether to process this digit as part of the whole or fractional part
+    CMP     isFrac, 1
+    JE      _fracOperations
+
+    ; for whole number portion: multiply current value accumulated by 10
+    MOV     immVal, 10
+    FILD    immVal
+    FMUL
+
+    ; load value of current character
+    FILD    curChar
+    JMP     _negate
+
+; for fractional part: load value of current character
+; and divide it by a multiple of 10
+_fracOperations:
+    MOV     EDX, 0
+    IMUL    EBX, 10                         ; EBX was initialized in _processFrac
+    MOV     immVal, EBX
+    FILD    curChar
+    FILD    immVal
+    FDIV
+
+; if user entered a negative number, negate the value of current character
+_negate:
+    CMP     isNegative, 1
+    JNE     _floatContinue
+    FCHS
+
+; add value of current character
+_floatContinue:
+    FADD
+    JMP     _endFloatLoop
+
+; if the radix point was encountered, set isFrac to "true" and initialize
+; value to divide by to get digits to correct place values
+_processFrac:
+    MOV     isFrac, 1
+    MOV     EBX, 1                          ; number to divide digit by
+    JMP     _endFloatLoop
+
+; if input was invalid, display error message and reprompt
+_floatInvalid:
+    mDisplayString [EBP + 5*4]
+    JMP     _getFloatInput
+
+_floatEnd:
+    MOV     EDI, [EBP + 2*4]                ; move final value to runtime stack
+    FSTP    REAL4 PTR [EDI]
+    POP     ESI                             ; restore registers
+    POP     EDI
+    POP     EDX
+    POP     ECX
+    POP     EBX
+    POP     EAX
+    RET     5*4
+ReadFloatVal ENDP
 
 
 END main
