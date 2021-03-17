@@ -520,10 +520,10 @@ _fillArray:
     PUSH    EBX                             ; numerical value output by ReadVal
     CALL    ReadVal
     
-    ; place value from user in array using DWORD primitives
+    ; place value from user in array
     MOV     EAX, [EBX]
-    CLD
-    STOSD
+    MOV     [EDI], EAX
+    ADD     EDI, 4
     LOOP    _fillArray
 
     POP     EDI                             ; restore registers
@@ -576,8 +576,8 @@ displayResults PROC
 ; step through array of numbers with DWORD primitives; for each value,
 ; add to sum and display it
 _processArray:
-    CLD
-    LODSD
+    MOV     EAX, [ESI]
+    ADD     ESI, 4
     ADD     sum, EAX                ; add current value to sum
 
     ; call WriteVal to display value within list
