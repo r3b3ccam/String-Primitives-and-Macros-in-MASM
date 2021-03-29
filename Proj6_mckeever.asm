@@ -148,7 +148,7 @@ main ENDP
 ;
 ; Preconditions: None
 ;
-; Postconditions: This strings and numeric value are printed to output.
+; Postconditions: The strings and numeric value are printed to output.
 ;
 ; Receives:
 ;       [EBP + 4*4] = address of first string to display
@@ -648,7 +648,7 @@ displayResults ENDP
 ;
 ; Preconditions: None
 ;
-; Postconditions: This string is printed to output.
+; Postconditions: The string is printed to output.
 ;
 ; Receives:
 ;       [EBP + 2*4] = address of string to display
